@@ -1,0 +1,82 @@
+body {
+  font-family: Avenir, sans-serif;
+  font-size: 16px;
+  background-color: #ececec;
+  /* scroll disabled */
+  overflow: hidden;
+  /* zoom disabled */
+  touch-action: manipulation;
+  /* text selection disabled */
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+.content {
+  background-color: white;
+  border-radius: 25px;
+  margin-top: 10px;
+  padding: 10px;
+}
+
+.center {
+  text-align: center;
+}
+
+.gameDiv,
+.scoreDiv {
+  background: url(/images/snakeBGLight.png) no-repeat;
+  background-size: 1300px;
+  display: inline-block;
+  width: 300px;
+  height: 520px;
+  color: black;
+  border-radius: 10px;
+  border: 2px solid black;
+}
+
+.canvas {
+  background-color: black;
+  display: inline;
+}
+
+h4 {
+  margin: 3px;
+  font-weight: bold;
+}
+
+.gameMenu {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.controls {
+  margin: 10px;
+  border-radius: 100px;
+}
+
+button {
+  width: 100px;
+  height: 20px;
+  margin: 5px;
+  padding: 10px;
+  background-color: white;
+  font-weight: bold;
+  color: green;
+  border: 2px solid;
+  border-radius: 10px;
+}
+
+.gameMenu button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.controls button {
+  height: 40px;
+  background-color: rgba(255, 255, 255, 0.75);
+  border-color: rgba(255, 255, 255, 0);
+}

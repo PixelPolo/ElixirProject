@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- META -->
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no"
+    />
+    <!-- TITLE -->
+    <title>SnakeGame!</title>
+    <!-- CSS -->
+    <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
+    <!-- SCRIPTS -->
+    <script defer phx-track-static type="text/javascript" src={~p"/assets/snake/snake.js"}>
+    </script>
+  </head>
+  <body>
+    <!-- CONTENT -->
+    <div class="content center">
+      <!-- GAME -->
+      <div class="gameDiv">
+        <h4>Score : <span class="score"></span></h4>
+        <canvas class="canvas"></canvas>
+        <div class="bestScoreDiv">
+          <h4>Best score : <span class="bestScore"></span></h4>
+        </div>
+        <div class="gameMenu">
+          <button class="start">Start</button>
+          <button class="controlSelector">Controls</button>
+        </div>
+        <div class="controls">
+          <div><button class="up">&#x028C;</button></div>
+          <div>
+            <button class="left">&lt;</button>
+            <button class="right">&gt;</button>
+          </div>
+          <div><button class="down">v</button></div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
