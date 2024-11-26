@@ -1,84 +1,55 @@
 defmodule Loadbalancer.PlugRouter do
   @moduledoc """
-  A simple HTTP proxy using Plug to forward requests to an origin server.
-  It redirects requests for specific routes or dynamically proxies others.
+  A simple Load Balancer router that forwards client requests to the CDN server.
   """
-
   use Plug.Router
+
+  require Logger
 
   # Plug pipeline for matching and dispatching routes
   plug(:match)
   plug(:dispatch)
 
-  # Root route.
-  # A health check endpoint to verify that the router is running.
-  # Responds with a plain text message.
+  # Root route for health check
   get "/" do
     send_resp(conn, 200, "Hello from Loadbalancer.PlugRouter!")
   end
 
-  # Proxy route for `/snake`.
-  # Redirects requests from `http://localhost:8001/snake` to the origin server
-  # at `http://localhost:4000/snake`.
-  # - Returns the origin server's response to the client.
-  # - Appends a visible note to the body to indicate that the request was proxied.
-  # - If the origin server is unreachable, responds with a `502 Bad Gateway` error.
-  get "/snake" do
-    target_url = "http://localhost:4000/snake"
-
-    case HTTPoison.get(target_url) do
-      # Successful response from the origin server
-      {:ok, %HTTPoison.Response{status_code: status_code, body: body, headers: headers}} ->
-        # Append a note to the response body to indicate proxying
-        updated_body = body <> "<div style='text-align: center; margin-top: 20px; color: gray;'>
-          <small>Note: This response was proxied through the load balancer.</small>
-        </div>"
-
-        # Return the origin's response with the updated body
-        conn
-        # Copy headers from the origin server
-        |> copy_headers(headers)
-        |> send_resp(status_code, updated_body)
-
-      # Error response if the origin server is unreachable
-      {:error, %HTTPoison.Error{reason: reason}} ->
-        send_resp(conn, 502, "Error fetching resource: #{inspect(reason)}")
-    end
-  end
-
-  # Catch-all route for proxying other requests.
-  # Dynamically forwards all requests to the origin server based on the path.
-  # For example:
-  #   - `http://localhost:8001/assets/app.css` -> `http://localhost:4000/assets/app.css`
-  #   - `http://localhost:8001/js/app.js` -> `http://localhost:4000/js/app.js`
-  # Returns the origin server's response as is, without modifying the body.
+  # Catch-all route to forward requests to the CDN server on port 9000
   match "/*path" do
-    target_url = "http://localhost:4000/#{Enum.join(path, "/")}"
+    # Build the target URL by appending the original path to the CDN server URL
+    target_url = "http://localhost:9000/#{Enum.join(path, "/")}"
 
-    case HTTPoison.get(target_url) do
-      # Successful response from the origin server
+    # Determine the body of the request
+    request_body =
+      case conn.method do
+        "POST" -> Plug.Conn.read_body(conn) |> elem(1)
+        "PUT" -> Plug.Conn.read_body(conn) |> elem(1)
+        _ -> "" # Use an empty string for GET, DELETE, etc.
+      end
+
+    # Forward the client request to the CDN server using HTTPoison
+    case HTTPoison.request(
+           conn.method |> String.to_atom(), # Convert HTTP method (GET, POST, etc.) to atom
+           target_url,                     # Target URL
+           request_body,                   # Forward the body (empty string for GET)
+           Enum.into(conn.req_headers, []), # Include the original request headers
+           recv_timeout: 5000              # Timeout in milliseconds
+         ) do
       {:ok, %HTTPoison.Response{status_code: status_code, body: body, headers: headers}} ->
+        Logger.info("[LOAD BALANCER] Forwarded request to #{target_url}")
+        # Copy response headers from the CDN and send back to the client
         conn
-        # Copy headers from the origin server
         |> copy_headers(headers)
-        # Return the origin server's response
         |> send_resp(status_code, body)
 
-      # Error response if the origin server is unreachable
       {:error, %HTTPoison.Error{reason: reason}} ->
-        send_resp(conn, 502, "Error fetching resource: #{inspect(reason)}")
+        Logger.error("[LOAD BALANCER] Failed to forward request to #{target_url}: #{inspect(reason)}")
+        send_resp(conn, 502, "Error forwarding request: #{inspect(reason)}")
     end
   end
 
-  # Copies response headers from the origin server to the Plug connection.
-  # This ensures that headers like Content-Type, Cache-Control, and others are preserved.
-  #
-  # Parameters:
-  # - `conn`: The current Plug connection.
-  # - `headers`: A list of headers from the origin server's response.
-  #
-  # Returns:
-  # - The updated Plug connection with the headers added.
+  # Helper function to copy response headers to the client
   defp copy_headers(conn, headers) do
     Enum.reduce(headers, conn, fn {key, value}, acc ->
       Plug.Conn.put_resp_header(acc, key, value)

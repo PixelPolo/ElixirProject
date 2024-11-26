@@ -10,8 +10,8 @@ defmodule Loadbalancer.Application do
     children = [
       # Starts a worker by calling: Loadbalancer.Worker.start_link(arg)
       # {Loadbalancer.Worker, arg}
-      {Plug.Cowboy, scheme: :http, plug: Loadbalancer.PlugServer, options: [port: 8000]},
-      {Plug.Cowboy, scheme: :http, plug: Loadbalancer.PlugRouter, options: [port: 8001]}
+      {Plug.Cowboy, scheme: :http, plug: Loadbalancer.PlugRouter, options: [port: 8000]},
+      {Plug.Cowboy, scheme: :http, plug: Loadbalancer.PlugServer, options: [port: 8001]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
