@@ -8,10 +8,11 @@ defmodule Loadbalancer.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      # Starts a worker by calling: Loadbalancer.Worker.start_link(arg)
-      # {Loadbalancer.Worker, arg}
-      {Plug.Cowboy, scheme: :http, plug: Loadbalancer.PlugRouter, options: [port: 8000]},
-      {Plug.Cowboy, scheme: :http, plug: Loadbalancer.PlugServer, options: [port: 8001]}
+      # Starts the CDN Registry
+      Loadbalancer.CdnRegistry,
+
+      # Plug process for the http router
+      {Plug.Cowboy, scheme: :http, plug: Loadbalancer.PlugRouter, options: [port: 8000]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

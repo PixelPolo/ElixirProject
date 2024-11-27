@@ -1,51 +1,83 @@
 defmodule Cdn.PlugRouter do
   @moduledoc """
-  A simple HTTP proxy using Plug to forward requests to an origin server with caching.
+  A simple HTTP proxy using Plug to forward requests to an origin server with caching
+  https://hexdocs.pm/plug/readme.html#plug-router
   """
   use Plug.Router
-
-  # Logger
   require Logger
 
   # Plug pipeline for matching and dispatching routes
   plug(:match)
   plug(:dispatch)
 
-  # Root route.
-  # A health check endpoint to verify that the router is running.
+  #############################################################################
+  ##### Health check on endpoint `/` to verify that the router is running #####
+  #############################################################################
   get "/" do
-    send_resp(conn, 200, "Hello from Cdn.PlugRouter!")
+    send_resp(conn, 200, "CDN is running!")
   end
 
-  # Proxy route for `/snake` with caching
+  ##########################################################
+  ##### Route `/register` to register to Load Balancer #####
+  ##########################################################
+  get "/register" do
+    # Fetch the city and the port from the application configuration or environment
+    cdn_city = Application.fetch_env!(:cdn, :city)
+    port = Application.fetch_env!(:cdn, :port)
+
+    # Construct the Load Balancer URL with the city included in the endpoint
+    load_balancer_url = "http://localhost:8000/cdn/register/#{cdn_city}"
+
+    # Build the CDN's IP address and port (assuming it's running locally) and create a paylod
+    cdn_ip = "localhost:#{port}"
+    payload = Jason.encode!(%{ip: cdn_ip})
+
+    # Send a POST request to the Load Balancer's register endpoint with the payload
+    case HTTPoison.post(load_balancer_url, payload, [{"Content-Type", "application/json"}]) do
+      {:ok, %HTTPoison.Response{status_code: 201}} ->
+        send_resp(conn, 201, "Successfully registered to Load Balancer with city #{cdn_city}")
+
+      {:ok, %HTTPoison.Response{status_code: status_code, body: body}} ->
+        send_resp(conn, status_code, "Failed to register: #{body}")
+
+      {:error, %HTTPoison.Error{reason: reason}} ->
+        send_resp(conn, 500, "Error connecting to Load Balancer: #{inspect(reason)}")
+    end
+  end
+
+  #################################################
+  ##### Proxy route for `/snake` with caching #####
+  #################################################
   get "/snake" do
+    # Origin server url
     target_url = "http://localhost:4000/snake"
 
+    # Fetch the city from the application configuration
+    cdn_city = Application.fetch_env!(:cdn, :city)
+
+    # Try to get resources from cache
     case Cachex.get(:cdn_cache, target_url) do
       # Serve from cache if available
       {:ok, cached_body} when not is_nil(cached_body) ->
-        Logger.info("Served from cache: #{target_url}")
         send_resp(conn, 200, cached_body)
 
       # Fetch from origin server if not in cache
       _ ->
-        Logger.info("Not in cache: #{target_url}")
-
         case HTTPoison.get(target_url) do
-          {:ok, %HTTPoison.Response{status_code: status_code, body: body, headers: headers}} ->
+          # Successful fetch
+          {:ok, %HTTPoison.Response{status_code: status_code, body: body, headers: _headers}} ->
             updated_body =
               body <> "<div style='text-align: center; margin-top: 20px; color: gray;'>
-                <small>Note: This response was proxied through the load balancer.</small>
-              </div>"
+              <small>Note: This response was proxied through the CDN in #{cdn_city}</small>
+            </div>"
 
             # Store the response in the cache
             Cachex.put(:cdn_cache, target_url, updated_body)
-            log_cache_content()
 
-            conn
-            |> copy_headers(headers)
-            |> send_resp(status_code, updated_body)
+            # Send the response directly to the client
+            send_resp(conn, status_code, updated_body)
 
+          # Error fetch
           {:error, %HTTPoison.Error{reason: reason}} ->
             Logger.error("Failed to fetch from origin: #{inspect(reason)}")
             send_resp(conn, 502, "Error fetching resource: #{inspect(reason)}")
@@ -53,54 +85,69 @@ defmodule Cdn.PlugRouter do
     end
   end
 
-  # Catch-all route for proxying other requests with caching
+  #################################################
+  ##### Route `/cache` to see the cache state #####
+  #################################################
+  get "/cache" do
+    case Cachex.keys(:cdn_cache) do
+      {:ok, keys} ->
+        response_body = """
+        Cache Keys:
+        #{inspect(keys, pretty: true)}
+        """
+
+        send_resp(conn, 200, response_body)
+
+      {:error, reason} ->
+        send_resp(conn, 500, "Error retrieving cache keys: #{inspect(reason)}")
+    end
+  end
+
+  ###################################################
+  ##### Route `/cache/clear` to clear the cache #####
+  ###################################################
+  get "/cache/clear" do
+    case Cachex.clear(:cdn_cache) do
+      {:ok, _} ->
+        send_resp(conn, 200, "Cache cleared successfully.")
+
+      {:error, reason} ->
+        send_resp(conn, 500, "Error clearing cache: #{inspect(reason)}")
+    end
+  end
+
+  ####################################################################
+  ##### Catch-all route for proxying other requests with caching #####
+  ####################################################################
   match "/*path" do
+    # Origin server url
     target_url = "http://localhost:4000/#{Enum.join(path, "/")}"
+
+    # Try to get resources from cache
 
     case Cachex.get(:cdn_cache, target_url) do
       # Serve from cache if available
       {:ok, cached_body} when not is_nil(cached_body) ->
-        Logger.info("Served from cache: #{target_url}")
         send_resp(conn, 200, cached_body)
 
       # Fetch from origin server if not in cache
       _ ->
-        Logger.info("Not in cache: #{target_url}")
-
+        # Fetch resources with HTTPoison
         case HTTPoison.get(target_url) do
-          {:ok, %HTTPoison.Response{status_code: status_code, body: body, headers: headers}} ->
+          # Successful fetch
+          {:ok, %HTTPoison.Response{status_code: status_code, body: body, headers: _headers}} ->
+            # Store the response in the cache
             Cachex.put(:cdn_cache, target_url, body)
-            log_cache_content()
 
+            # Send the response
             conn
-            |> copy_headers(headers)
             |> send_resp(status_code, body)
 
+          # Error fetch
           {:error, %HTTPoison.Error{reason: reason}} ->
             Logger.error("Failed to fetch from origin: #{inspect(reason)}")
             send_resp(conn, 502, "Error fetching resource: #{inspect(reason)}")
         end
-    end
-  end
-
-  # Helper function to copy response headers from origin server
-  defp copy_headers(conn, headers) do
-    Enum.reduce(headers, conn, fn {key, value}, acc ->
-      Plug.Conn.put_resp_header(acc, key, value)
-    end)
-  end
-
-  # Helper function to log cache content (keys only)
-  defp log_cache_content do
-    case Cachex.keys(:cdn_cache) do
-      {:ok, keys} ->
-        Logger.info("""
-        [CACHE CONTENT] Current cache keys:
-        #{Enum.map_join(keys, "\n", &("- " <> &1))}
-        """)
-
-      {:error, reason} ->
-        Logger.error("[ERROR] Failed to inspect cache: #{inspect(reason)}")
     end
   end
 end

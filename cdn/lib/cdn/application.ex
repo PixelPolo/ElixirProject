@@ -4,14 +4,23 @@ defmodule Cdn.Application do
   @moduledoc false
 
   use Application
+  require Logger
 
   @impl true
   def start(_type, _args) do
+    # Fetch config.exs
+    port = Application.get_env(:cdn, :port, 9000)
+    city = Application.get_env(:cdn, :city, "Unknown City")
+
+    # Log the CDN status
+    Logger.info("Starting CDN for city #{city} on port #{port}")
+
     children = [
-      # Starts a worker by calling: Cdn.Worker.start_link(arg)
-      # {Cdn.Worker, arg}
+      # Cachex process to manage cache
       {Cachex, name: :cdn_cache},
-      {Plug.Cowboy, scheme: :http, plug: Cdn.PlugRouter, options: [port: 9000]}
+
+      # Plug process for the http router
+      {Plug.Cowboy, scheme: :http, plug: Cdn.PlugRouter, options: [port: port]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
