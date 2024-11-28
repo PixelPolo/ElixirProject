@@ -53,7 +53,8 @@ defmodule Cdn.PlugRouter do
   #################################################
   get "/snake" do
     # Origin server url
-    target_url = "http://localhost:4000/snake"
+    # target_url = "http://localhost:4000/snake"
+    target_url = "http://host.docker.internal:4000/snake"
 
     # Fetch the city from the application configuration
     cdn_city = Application.fetch_env!(:cdn, :city)
@@ -124,7 +125,8 @@ defmodule Cdn.PlugRouter do
   ####################################################################
   match "/*path" do
     # Origin server url
-    target_url = "http://localhost:4000/#{Enum.join(path, "/")}"
+    # target_url = "http://localhost:4000/#{Enum.join(path, "/")}"
+    target_url = "http://host.docker.internal:4000/#{Enum.join(path, "/")}"
 
     # Try to get resources from cache
 

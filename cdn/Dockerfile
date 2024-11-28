@@ -3,13 +3,19 @@
 #===========
 FROM elixir:1.17-alpine as build
 
+# Set the environment to production
 ENV MIX_ENV=prod
 
+# Install build tools and dependencies
 RUN apk add --no-cache build-base git
 
+# Set the working directory inside the container
 WORKDIR /app
+
+# Copy the project files into the container
 COPY . .
 
+# Install dependencies, compile the project, and build the release
 RUN mix local.hex --force && \
     mix local.rebar --force && \
     mix deps.get && \
@@ -21,13 +27,18 @@ RUN mix local.hex --force && \
 #================
 FROM alpine:3.18
 
+# Install runtime dependencies
 RUN apk add --no-cache libstdc++ ncurses
 
+# Set runtime environment variables with default values
 ENV REPLACE_OS_VARS=true \
     PORT=9000 \
     CITY=Fribourg
 
+# Set the working directory inside the container
 WORKDIR /opt/app
+
+# Copy the built release from the build stage
 COPY --from=build /app/_build/prod/rel/cdn .
 
 # Expose the default port (to be dynamic, this needs runtime adjustment)
