@@ -14,7 +14,9 @@ defmodule Cdn.PlugRouter do
   ##### Health check on endpoint `/` to verify that the router is running #####
   #############################################################################
   get "/" do
-    send_resp(conn, 200, "CDN is running!")
+    cdn_city = Application.fetch_env!(:cdn, :city)
+    port = Application.fetch_env!(:cdn, :port)
+    send_resp(conn, 200, "CDN in #{cdn_city} is running on port #{port} !")
   end
 
   ##########################################################
@@ -26,7 +28,8 @@ defmodule Cdn.PlugRouter do
     port = Application.fetch_env!(:cdn, :port)
 
     # Construct the Load Balancer URL with the city included in the endpoint
-    load_balancer_url = "http://localhost:8000/cdn/register/#{cdn_city}"
+    #load_balancer_url = "http://localhost:8000/cdn/register/#{cdn_city}"
+    load_balancer_url = "http://host.docker.internal:8000/cdn/register/#{cdn_city}"
 
     # Build the CDN's IP address and port (assuming it's running locally) and create a paylod
     cdn_ip = "localhost:#{port}"

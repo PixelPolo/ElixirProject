@@ -52,7 +52,11 @@ A simple HTTP proxy using Plug to forward requests to an origin server with cach
 
 2. Start the Server
 
-   A Run the following command to start the server: A bash A mix run --no-halt A
+   A Run the following command to start the server:
+
+   ```bash
+   mix run --no-halt
+   ```
 
 3. Test the Routes
 
