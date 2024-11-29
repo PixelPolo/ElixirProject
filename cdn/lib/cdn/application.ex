@@ -17,9 +17,11 @@ defmodule Cdn.Application do
 
     children = [
       # Cachex process to manage cache
+      #  https://hexdocs.pm/cachex/overview.html
       {Cachex, name: :cdn_cache},
 
       # Plug process for the http router
+      #  https://hexdocs.pm/plug/readme.html
       {Plug.Cowboy, scheme: :http, plug: Cdn.PlugRouter, options: [port: port]}
     ]
 

@@ -6,7 +6,7 @@ A simple HTTP proxy using Plug to forward requests to an origin server with cach
 
 - Acts as a proxy server that forwards requests to an origin server.
 - Caches responses to improve performance.
-- Registers itself to the Load Balancer for request routing.
+- Registers itself to the Loadbalancer for request routing.
 - Provides routes to view and manage the cache.
 
 ## Endpoints
@@ -16,10 +16,10 @@ A simple HTTP proxy using Plug to forward requests to an origin server with cach
 - GET /
   - Verifies that the CDN server is running.
 
-### Register to Load Balancer
+### Register to Loadbalancer
 
 - GET /register
-  - Registers the CDN to the Load Balancer using its city and port.
+  - Registers the CDN to the Loadbalancer.
 
 ### Proxy Requests with Caching
 
@@ -44,30 +44,6 @@ A simple HTTP proxy using Plug to forward requests to an origin server with cach
 - GET /cache/clear
   - Clears all entries in the CDN cache.
 
-## Instructions
-
-1. Start the CDN Server
-
-   Make sure the origin server is running at <http://localhost:4000> before starting the CDN server.
-
-2. Start the Server
-
-   A Run the following command to start the server:
-
-   ```bash
-   mix run --no-halt
-   ```
-
-3. Test the Routes
-
-Use tools like curl or a browser to interact with the endpoints.
-
-Example to test /snake:
-
-```bash
-curl http://localhost:<>/snake
-```
-
 ## Configuration
 
 - The CDN server uses the following environment variables (set in config.exs):
@@ -77,4 +53,33 @@ curl http://localhost:<>/snake
     - The port on which the CDN server listens (e.g., 9000).
 
   - :city
+
     - The city where the CDN is located, used during registration.
+
+  - :loadbalancer_url
+
+    - The Loadbalancer server url to register the cdn
+
+  - :origin_url
+    - The Origin server url to fetch the resources
+
+## How to run
+
+This application is provided with a Dockerfile :
+
+```bash
+# Get the dependencies
+mix deps.get
+
+# Create a docker image
+docker build -t cdn .
+
+# Generate containers on different ports
+docker run -d -p 9001:9001 -e CITY=Lausanne -e PORT=9001 --name lausanne-cdn cdn
+
+docker run -d -p 9002:9002 -e CITY=Paris -e PORT=9002 --name paris-cdn cdn
+
+docker run -d -p 9003:9003 -e CITY=Washington -e PORT=9003 --name washington-cdn cdn
+```
+
+* Note : A `docker-compose.yml` is available for the overall project.
