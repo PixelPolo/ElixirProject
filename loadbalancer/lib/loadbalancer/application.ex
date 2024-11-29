@@ -26,6 +26,9 @@ defmodule Loadbalancer.Application do
       # Starts the CDN Registry
       Loadbalancer.CdnRegistry,
 
+      # Heartbeat to check the CDNs life status
+      {Loadbalancer.Heartbeat, []},
+
       # Plug process for the http router
       {Plug.Cowboy, scheme: :http, plug: Loadbalancer.PlugRouter, options: [port: port]}
     ]

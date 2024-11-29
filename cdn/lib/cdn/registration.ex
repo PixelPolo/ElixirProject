@@ -15,19 +15,19 @@ defmodule Cdn.Registration do
     - Responds with success (201) or an error based on the Load Balancer's response.
   """
   def register_to_loadbalancer(conn) do
-    # Fetch the city and the port from config/runtime.exs
+    # Fetch configuration values
     cdn_city = Application.fetch_env!(:cdn, :city)
     port = Application.fetch_env!(:cdn, :port)
-    loadbalancer_url = Application.fetch_env!(:cdn, :loadbalancer_url)
+    cdn_ip = "http://host.docker.internal:#{port}"
 
-    # Construct the Load Balancer URL with the city included in the endpoint
+    # Construct the Load Balancer URL
+    loadbalancer_url = Application.fetch_env!(:cdn, :loadbalancer_url)
     target_url = "#{loadbalancer_url}/cdn/register/#{cdn_city}"
 
-    # Build the CDN's IP address and port (running locally) and create a payload
-    cdn_ip = "localhost:#{port}"
+    # Prepare the payload
     payload = Jason.encode!(%{ip: cdn_ip})
 
-    # Send a POST request to the Load Balancer's register endpoint with the payload
+    # Send a POST request to register the CDN
     case HTTPoison.post(target_url, payload, [{"Content-Type", "application/json"}]) do
       {:ok, %HTTPoison.Response{status_code: 201}} ->
         send_resp(conn, 201, "Successfully registered to Load Balancer with city #{cdn_city}")

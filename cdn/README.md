@@ -13,35 +13,35 @@ A simple HTTP proxy using Plug to forward requests to an origin server with cach
 
 ### Health Check
 
-- GET /
+- **GET /**
   - Verifies that the CDN server is running.
 
 ### Register to Loadbalancer
 
-- GET /register
+- **GET /register**
   - Registers the CDN to the Loadbalancer.
 
 ### Proxy Requests with Caching
 
-- GET /snake
+- **GET /snake**
 
   - Fetches resources from the origin server for the /snake path.
   - If the resource is cached, it serves the cached response.
   - Otherwise, it fetches from the origin server, caches the response, and serves it.
 
-- MATCH /\*path
+- **MATCH /\*path**
   - Catch-all route for other requests, proxies them to the origin server.
   - Checks the cache before making a request to the origin server.
   - Caches the response for future requests.
 
 ### View Cache State
 
-- GET /cache
+- **GET /cache**
   - Displays the current cache keys stored in the CDN.
 
 ### Clear Cache
 
-- GET /cache/clear
+- **GET /cache/clear**
   - Clears all entries in the CDN cache.
 
 ## Configuration
@@ -82,4 +82,4 @@ docker run -d -p 9002:9002 -e CITY=Paris -e PORT=9002 --name paris-cdn cdn
 docker run -d -p 9003:9003 -e CITY=Washington -e PORT=9003 --name washington-cdn cdn
 ```
 
-* Note : A `docker-compose.yml` is available for the overall project.
+- Note : A `docker-compose.yml` is available for the overall project.

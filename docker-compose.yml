@@ -22,7 +22,7 @@ services:
   #     SIMULATED_COORDS_LON: "6.6323"
   #   restart: unless-stopped
 
-    # Load Balancer (Simulation of a Client in New York)
+  # Load Balancer (Simulation of a Client in New York)
   loadbalancer_newyork:
     build:
       context: ./loadbalancer

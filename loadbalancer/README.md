@@ -1,55 +1,86 @@
-# Load Balancer
+# Loadbalancer
 
-Load balancer for a distributed CDN network in Elixir.
+A Load Balancer for managing and forwarding client requests to the nearest CDN.
 
 ## Features
 
-- Redirects user requests to the nearest CDN server based on geographical location.
-- Allows dynamic registration of CDN servers.
-- Displays the current registry of CDN servers.
-- Provides a health check endpoint.
+- Dynamically registers CDN servers with their locations.
+- Redirects client requests to the closest CDN based on geographical location.
+- Displays the current status of registered CDNs and their cache.
+- Performs periodic health checks on all registered CDNs and updates the registry based on their status.
 
 ## Endpoints
 
 ### Health Check
 
-- GET /
-  - Verifies that the load balancer is running.
+- **GET /**
+  - Verifies that the Load Balancer is running.
 
-### Register a CDN Server
+### Register CDN
 
-FOR CDN SERVERS APPLICATION ONLY
+- **POST /cdn/register/:city**
 
-- POST /cdn/register/:city
-  - Registers a new CDN server for a specific city.
-  - Request Body (JSON): { "ip": "000.00.00.00" }
+  - Registers a CDN server with its IP and city.
+  - Uses the city name to fetch coordinates (latitude and longitude) from the Nominatim API.
+
+  **Request Body**:
+
+  ```json
+  {
+    "ip": "127.0.0.1:9001"
+  }
+  ```
 
 ### View CDN Registry
 
-- GET /cdn/registry
-  - Displays the list of currently registered CDN servers.
+- **GET /cdn/registry**
+  - Displays the list of registered CDNs, including:
+    - IP address.
+    - City.
+    - Latitude and longitude.
 
-### Redirect to the Nearest CDN
+### Redirect Client Requests
 
-- ANY /\*path
-  - Redirects the request to the nearest CDN server based on simulated location defined in `config.exs`
+- **MATCH /\*path**
+  - Forwards client requests to the nearest CDN based on their geographical location.
+  - Uses the Haversine formula to calculate distances between the client and registered CDNs.
+  - Responds with a 302 redirect to the nearest CDN.
 
-## Instructions
+### View Load Balancer Status
 
-1. Start the Origin Server
+- **GET /status**
+  - Displays:
+    - The client's simulated location (latitude, longitude, and city).
+    - The list of registered CDNs, their cache status, and distances to the client.
 
-   Make sure the origin server is running at <http://localhost:4000> before starting the load alancer.
+## Configuration
 
-2. Start the Load Balancer
+- The Load Balancer uses the following environment variables (set in `config.exs`):
 
-   Use the following command to start the server:
+  - **`PORT`**
 
-   ```bash
-   mix run --no-halt
-   ```
+    - The port on which the Load Balancer listens (e.g., 8000).
 
-3. Access the Load Balancer
+  - **`SIMULATED_COORDS_LAT`**
 
-   - Test the redirection:
-     Open <http://localhost:8000/snake> in your browser.
-   - Register CDN servers or check the registry using the endpoints listed above.
+    - The simulated latitude for the client.
+
+  - **`SIMULATED_COORDS_LON`**
+    - The simulated longitude for the client.
+
+## How to run
+
+This application is provided with a Dockerfile:
+
+```bash
+# Get the dependencies
+mix deps.get
+
+# Create a docker image
+docker build -t loadbalancer .
+
+# Run the Load Balancer container
+docker run -d -p 8000:8000 -e SIMULATED_COORDS_LAT=48.8566 -e SIMULATED_COORDS_LON=2.3522 --name loadbalancer loadbalancer
+```
+
+- Note : A `docker-compose.yml` is available for the overall project.
