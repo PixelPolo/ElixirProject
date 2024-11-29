@@ -22,30 +22,48 @@ The project mimics the behavior of a real-world CDN:
 - Explore Elixir, Phoenix, and relevant libraries like Plug, Cachex, and HTTPoison.
 - Simulate geolocation-based routing for efficient content delivery.
 
-## How to build and run each docker images
-
-```bash
-# Origin server
-mix phx.gen.release --docker   # create a release
-docker build -t origin .    # build a docker image with the tag origin
-docker images      # check the list of images
-docker run -p 4000:4000 --env SECRET_KEY_BASE=$(mix phx.gen.secret) --name origin origin
-
-# Loadbalancer server : Simulation with a client from Lausanne
-docker run -d --name loadbalancer-lausanne -p 8000:8000 \
-    -e SIMULATED_COORDS_LAT=46.5197 \
-    -e SIMULATED_COORDS_LON=6.6323 \
-    loadbalancer
-
-# CDN servers
-docker run -d -p 9001:9001 -e CITY=Lausanne -e PORT=9001 --name lausanne-cdn cdn
-docker run -d -p 9002:9002 -e CITY=Paris -e PORT=9002 --name paris-cdn cdn
-docker run -d -p 9003:9003 -e CITY=Washington -e PORT=9003 --name washington-cdn cdn
-```
-
 ## How to run all the project with docker compose
 
 ```bash
 docker-compose up --build -d
-docker-compose down --rmi all --volumes
+docker-compose down --rmi all
 ```
+
+## How to interact with the system
+
+1. **Access the Load Balancer**:  
+   The load balancer is accessible via [http://localhost:8000](http://localhost:8000).
+
+2. **Check Load Balancer Status**:  
+   You can check the status of the load balancer by visiting [http://localhost:8000/status](http://localhost:8000/status).
+
+3. **Play the Game via CDN**:  
+   To access the game on the **origin server** through the CDN, go to [http://localhost:8000/snake](http://localhost:8000/snake).  
+   - **Important**: The game won't be available unless the CDNs are registered.
+   - You can also access the game directly without the CDN by visiting [http://localhost:4000/snake](http://localhost:4000/snake).
+
+4. **Register the CDNs**:  
+   Before the load balancer can redirect requests to the CDNs, you need to register them. To do this, send a registration request to each CDN:
+   - [http://localhost:9001/register](http://localhost:9001/register) for Lausanne CDN.
+   - [http://localhost:9002/register](http://localhost:9002/register) for Paris CDN.
+   - [http://localhost:9003/register](http://localhost:9003/register) for Washington CDN.
+
+   Once the CDNs are registered, the load balancer can successfully route requests based on geolocation.
+
+5. **View CDN Cache**:  
+   You can view the cache for each CDN by visiting the following URLs:
+   - [http://localhost:9001/cache](http://localhost:9001/cache) for Lausanne CDN.
+   - [http://localhost:9002/cache](http://localhost:9002/cache) for Paris CDN.
+   - [http://localhost:9003/cache](http://localhost:9003/cache) for Washington CDN.
+
+6. **Clear CDN Cache**:  
+   To clear the cache for each CDN, visit the following URLs:
+   - [http://localhost:9001/cache/clear](http://localhost:9001/cache/clear) for Lausanne CDN.
+   - [http://localhost:9002/cache/clear](http://localhost:9002/cache/clear) for Paris CDN.
+   - [http://localhost:9003/cache/clear](http://localhost:9003/cache/clear) for Washington CDN.
+
+7. **CDN Failure and Heartbeat**:  
+   If a CDN goes down (e.g., you stop the Docker container for that CDN), the load balancer will update its registry to reflect the change.  
+   This is done via the **heartbeat** mechanism, which periodically checks the health of the registered CDNs. If a CDN becomes unreachable, it is removed from the registry, ensuring that the load balancer only redirects traffic to available CDNs.
+
+   You can observe this process by reload the load balancer's status at [http://localhost:8000/status](http://localhost:8000/status).

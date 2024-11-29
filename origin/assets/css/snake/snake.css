@@ -26,7 +26,7 @@ body {
 
 .gameDiv,
 .scoreDiv {
-  background: url(/images/snakeBGLight.png) no-repeat;
+  background-color: lightgreen;
   background-size: 1300px;
   display: inline-block;
   width: 300px;

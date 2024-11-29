@@ -13,38 +13,23 @@ defmodule OriginWeb.Router do
     plug :put_secure_browser_headers
   end
 
+  ##### CUSTOM PIPELINE FOR /snake #####
   pipeline :snake_pipeline do
     plug :introspect
   end
 
   # Function plugs to log connexion info
-  def introspect(conn, _opts) do
+  defp introspect(conn, _opts) do
     ip = conn.remote_ip |> Tuple.to_list() |> Enum.join(".")
 
     Logger.info("""
     Verb: #{inspect(conn.method)}
     Host: #{inspect(conn.host)}
-    From IP: #{ip}}
-    From IP: #{get(conn)}
+    From IP: #{ip}
     """)
-
-    # Headers: #{inspect(conn.req_headers)}
 
     # Return the connexion
     conn
-  end
-
-  # https://stackoverflow.com/questions/39199899/how-to-get-client-ip-in-phoenix-rest-api
-  def get(conn) do
-    forwarded_for = List.first(Plug.Conn.get_req_header(conn, "x-forwarded-for"))
-
-    if forwarded_for do
-      String.split(forwarded_for, ",")
-      |> Enum.map(&String.trim/1)
-      |> List.first()
-    else
-      to_string(:inet_parse.ntoa(conn.remote_ip))
-    end
   end
 
   pipeline :api do
@@ -57,16 +42,17 @@ defmodule OriginWeb.Router do
     get "/", PageController, :home
   end
 
+  # Other scopes may use custom stacks.
+  # scope "/api", OriginWeb do
+  #   pipe_through :api
+  # end
+
+  ##### CUSTOM ROUTE /snake #####
   scope "/snake", OriginWeb do
     pipe_through [:browser, :snake_pipeline]
 
     get "/", SnakeController, :snake
   end
-
-  # Other scopes may use custom stacks.
-  # scope "/api", OriginWeb do
-  #   pipe_through :api
-  # end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:origin, :dev_routes) do

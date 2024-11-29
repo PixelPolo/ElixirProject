@@ -34,6 +34,7 @@ config :origin, Origin.Mailer, adapter: Swoosh.Adapters.Local
 config :esbuild,
   version: "0.17.11",
   origin: [
+    ###### CUSTOM ESBUILD CONFIG TO INCLUDE /snake/snake.js #####
     args: ~w(
       js/app.js
       js/snake/snake.js
@@ -49,6 +50,7 @@ config :esbuild,
 # Configure tailwind (the version is required)
 config :tailwind,
   version: "3.4.3",
+  ###### CUSTOM TAILWIND CONFIG TO INCLUDE /snake/snake.css #####
   origin: [
     args: ~w(
       --config=tailwind.config.js
