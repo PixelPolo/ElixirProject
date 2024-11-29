@@ -22,33 +22,30 @@ The project mimics the behavior of a real-world CDN:
 - Explore Elixir, Phoenix, and relevant libraries like Plug, Cachex, and HTTPoison.
 - Simulate geolocation-based routing for efficient content delivery.
 
-## How to Run
+## How to build and run each docker images
 
 ```bash
-# origin server
+# Origin server
 mix phx.gen.release --docker   # create a release
 docker build -t origin .    # build a docker image with the tag origin
 docker images      # check the list of images
 docker run -p 4000:4000 --env SECRET_KEY_BASE=$(mix phx.gen.secret) --name origin origin
 
-# loadbalancer server : Simulation with a client from Lausanne
+# Loadbalancer server : Simulation with a client from Lausanne
 docker run -d --name loadbalancer-lausanne -p 8000:8000 \
     -e SIMULATED_COORDS_LAT=46.5197 \
     -e SIMULATED_COORDS_LON=6.6323 \
     loadbalancer
 
-# loadbalancer server : Simulation with a client from Newyork
-docker run -d --name loadbalancer-newyork -p 8000:8000 \
-    -e SIMULATED_COORDS_LAT=40.7128 \
-    -e SIMULATED_COORDS_LON=-74.0060 \
-    loadbalancer
-
-
-
-
-# cdn servers
+# CDN servers
 docker run -d -p 9001:9001 -e CITY=Lausanne -e PORT=9001 --name lausanne-cdn cdn
 docker run -d -p 9002:9002 -e CITY=Paris -e PORT=9002 --name paris-cdn cdn
 docker run -d -p 9003:9003 -e CITY=Washington -e PORT=9003 --name washington-cdn cdn
+```
 
+## How to run all the project with docker compose
+
+```bash
+docker-compose up --build -d
+docker-compose down --rmi all --volumes
 ```

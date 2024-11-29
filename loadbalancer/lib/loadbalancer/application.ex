@@ -4,15 +4,30 @@ defmodule Loadbalancer.Application do
   @moduledoc false
 
   use Application
+  require Logger
 
   @impl true
   def start(_type, _args) do
+    # Fetch runtime environment variables or defaults
+    port = Application.get_env(:loadbalancer, :port, 8000)
+
+    simulated_coords =
+      Application.get_env(:loadbalancer, :simulated_coords, %{lat: 0.0, lon: 0.0})
+
+    lat = simulated_coords[:lat]
+    lon = simulated_coords[:lon]
+
+    # Log the Load Balancer status
+    Logger.info(
+      "Starting Load Balancer on port #{port} with simulated coordinates LAT=#{lat}, LON=#{lon}"
+    )
+
     children = [
       # Starts the CDN Registry
       Loadbalancer.CdnRegistry,
 
       # Plug process for the http router
-      {Plug.Cowboy, scheme: :http, plug: Loadbalancer.PlugRouter, options: [port: 8000]}
+      {Plug.Cowboy, scheme: :http, plug: Loadbalancer.PlugRouter, options: [port: port]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

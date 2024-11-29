@@ -32,7 +32,9 @@ RUN apk add --no-cache libstdc++ ncurses
 
 # Set runtime environment variables with default values
 ENV REPLACE_OS_VARS=true \
-    PORT=8000
+    PORT=8000 \
+    SIMULATED_COORDS_LAT=0.00 \
+    SIMULATED_COORDS_LON=0.00
 
 # Set the working directory inside the container
 WORKDIR /opt/app

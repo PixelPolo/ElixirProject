@@ -1,0 +1,69 @@
+services:
+  # Origin Server (Phoenix Application)
+  origin:
+    build:
+      context: ./origin
+    container_name: origin-server
+    ports:
+      - "4000:4000"
+    environment:
+      - SECRET_KEY_BASE=${SECRET_KEY_BASE}
+    restart: unless-stopped
+
+  # # Load Balancer (Simulation of a Client in Lausanne)
+  # loadbalancer:
+  #   build:
+  #     context: ./loadbalancer
+  #   container_name: loadbalancer-server
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     SIMULATED_COORDS_LAT: "46.5197"
+  #     SIMULATED_COORDS_LON: "6.6323"
+  #   restart: unless-stopped
+
+    # Load Balancer (Simulation of a Client in New York)
+  loadbalancer_newyork:
+    build:
+      context: ./loadbalancer
+    container_name: loadbalancer-server-newyork
+    ports:
+      - "8000:8000"
+    environment:
+      SIMULATED_COORDS_LAT: "40.7128"
+      SIMULATED_COORDS_LON: "-74.0060"
+    restart: unless-stopped
+
+  # CDN Servers
+  lausanne_cdn:
+    build:
+      context: ./cdn
+    container_name: cdn-server-lausanne
+    ports:
+      - "9001:9001"
+    environment:
+      CITY: "Lausanne"
+      PORT: "9001"
+    restart: unless-stopped
+
+  paris_cdn:
+    build:
+      context: ./cdn
+    container_name: cdn-server-paris
+    ports:
+      - "9002:9002"
+    environment:
+      CITY: "Paris"
+      PORT: "9002"
+    restart: unless-stopped
+
+  washington_cdn:
+    build:
+      context: ./cdn
+    container_name: cdn-server-washington
+    ports:
+      - "9003:9003"
+    environment:
+      CITY: "Washington"
+      PORT: "9003"
+    restart: unless-stopped
