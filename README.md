@@ -31,8 +31,20 @@ docker build -t origin .    # build a docker image with the tag origin
 docker images      # check the list of images
 docker run -p 4000:4000 --env SECRET_KEY_BASE=$(mix phx.gen.secret) --name origin origin
 
-# loadbalancer server (DEFAULT : CLIENT FROM PARIS)
-docker run -d --name loadbalancer -p 8000:8000 loadbalancer
+# loadbalancer server : Simulation with a client from Lausanne
+docker run -d --name loadbalancer-lausanne -p 8000:8000 \
+    -e SIMULATED_COORDS_LAT=46.5197 \
+    -e SIMULATED_COORDS_LON=6.6323 \
+    loadbalancer
+
+# loadbalancer server : Simulation with a client from Newyork
+docker run -d --name loadbalancer-newyork -p 8000:8000 \
+    -e SIMULATED_COORDS_LAT=40.7128 \
+    -e SIMULATED_COORDS_LON=-74.0060 \
+    loadbalancer
+
+
+
 
 # cdn servers
 docker run -d -p 9001:9001 -e CITY=Lausanne -e PORT=9001 --name lausanne-cdn cdn
